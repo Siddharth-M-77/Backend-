@@ -111,7 +111,7 @@ export const getAgentInfo = async (req, res) => {
         .status(404)
         .json({ message: "Agent not found", success: false });
     }
-    res.json({ user:agent, success: true });
+    res.json({ user: agent, success: true });
   } catch (error) {
     return res.status(500).json({ message: error.message, success: false });
   }
@@ -255,7 +255,7 @@ export const getUserPairs = async (req, res) => {
 };
 export const getTree = async (req, res) => {
   try {
-    const { agentId } = req.params;
+    const agentId = req.agent
 
     // Fetch the root user
     const rootUser = await User.findById(agentId);
@@ -316,6 +316,29 @@ export const getTree = async (req, res) => {
       message: "Tree fetched successfully",
       success: true,
       tree,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message, success: false });
+  }
+};
+
+export const getAllDirectUsers = async (req, res) => {
+  try {
+    const { _id } = req.agent;
+    const agent = await User.findById({ _id })
+      .populate("left right")
+      .populate("left right");
+    if (!agent) {
+      return res
+        .status(404)
+        .json({ message: "Agent not found", success: false });
+    }
+    console.log(agent);
+    const directUsers = agent.left.concat(agent.right);
+    return res.status(200).json({
+      message: "Direct users fetched successfully",
+      success: true,
+      directUsers,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message, success: false });

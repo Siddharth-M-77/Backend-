@@ -56,8 +56,6 @@ export const loginAdmin = async (req, res, next) => {
     next(error);
   }
 };
-
-// Create Admin
 export const createAdmin = async (req, res) => {
   try {
     const { email, password, name, mobile } = req.body;
@@ -96,7 +94,6 @@ export const createAdmin = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 export const logoutAdmin = async (req, res) => {
   try {
     res.clearCookie("token");
@@ -106,19 +103,18 @@ export const logoutAdmin = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 export const getAdmin = async (req, res) => {
   try {
     const admin = req.id;
     const adminFound = await Admin.findById(admin);
 
-    res.status(200)
+    res
+      .status(200)
       .json({ message: "Admin fetched successfully", user: adminFound });
   } catch (error) {
     console.error("Error in getAdmin", error);
   }
 };
-
 export const allUsers = async (req, res) => {
   try {
     const admin = req.id;
@@ -193,23 +189,145 @@ export const getAllBuyPackages = async (req, res) => {
     });
   }
 };
-
-const updatePackageAmount = async(req,res)=>{
+export const getAllDematAccounts = async (req, res) => {
   try {
-    const packageFound = await BuyPackage.findByIdAndUpdate(req.params.id, req.body, {new: true});
+    const dematAccounts = await Demat.find({}).populate("userId");
+    res.status(200).json({
+      message: "All demat accounts fetched successfully",
+      data: dematAccounts,
+    });
+  } catch (error) {
+    console.error("Error in getAllDematAccounts", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+// export const updatePackageAmount = async (req, res) => {
+//   try {
+//     // i want find pacjage and then update it amount with new
+//     // i am getting error buy package not found
+//     // i want to find pacjage and then update it amount with new
+//     // i am getting error buy package not found
+//     // i am getting error buy package not found
+//     const packageFound = await BuyPackage.findById(req.params.id);
+//     if (!packageFound) {
+//       return res.status(404).json({ message: "Buy package not found" });
+//     }
+//     packageFound.amount = req.body.amount;
+//     await packageFound.save();
+//     res.status(200).json({
+//       message: "Buy package updated successfully",
+//       package: packageFound,
+//     });
+
+//     console.error("Error in updatePackageAmount", error);
+//     res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+export const userStatus = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findOne(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isPackage === true && user.isEquityInvest === true) {
+      user.status = true;
+      await user.save();
+      res
+        .status(200)
+        .json({ message: "User status updated successfully", user: user });
+    } else {
+      res.status(400).json({ message: "User is not eligible for activation" });
+    }
+  } catch (error) {
+    console.error("Error in userStatus", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const updateUserEquintity = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findOne(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.isEquityInvest = true;
+    await user.save();
+    return res
+      .status(200)
+      .json({ message: "User equity status updated successfully", data: user });
+  } catch (error) {
+    console.error("Error in updateUserEquity", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+//i want all user which isEquinty false
+
+export const allUsersEquity = async (req, res) => {
+  try {
+    const usersEquity = await User.find({ isEquityInvest: false });
+    console.log(usersEquity);
+    res.status(200).json({
+      message: "All users equity false fetched successfully",
+      usersEquity,
+    });
+  } catch (error) {
+    console.error("Error in allUsersEquity", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const updateUserEquityApprove = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findOne(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.isEquityInvest = true;
+    await user.save();
+    return res
+      .status(200)
+      .json({ message: "User equity status updated successfully", data: user });
+  } catch (error) {
+    console.error("Error in updateUserEquity", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const updatePackageAmount = async (req, res) => {
+  try {
+    const { amount } = req.params.amount;
+    if (!amount) {
+      return res.status(400).json({ message: "Amount is required" });
+    }
+    const packageFound = await BuyPackage.findById(req.params.id);
     if (!packageFound) {
       return res.status(404).json({ message: "Buy package not found" });
     }
+    packageFound.amount = amount;
+    await packageFound.save();
     res.status(200).json({
       message: "Buy package updated successfully",
       package: packageFound,
     });
-    
   } catch (error) {
     console.error("Error in updatePackageAmount", error);
     res.status(500).json({
       message: error.message,
     });
-    
   }
-}
+};

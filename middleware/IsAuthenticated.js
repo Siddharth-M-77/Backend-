@@ -22,6 +22,7 @@ const IsAuthenticated = async (req, res, next) => {
     }
 
     req.id = decoded.userID;
+    console.log(req.id)
 
     const user = await User.findById(req.id);
     if (!user) {

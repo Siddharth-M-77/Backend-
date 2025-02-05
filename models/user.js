@@ -69,8 +69,19 @@ const UserSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    status: {
+      type: Boolean,
+      default: false,
+    },
+    dematId: {
+      type: String,
+      default: null,
+    },
+    dematPassword: {
+      type: String,
+      default: null,
+    },
   },
-
   {
     timestamps: true,
   }

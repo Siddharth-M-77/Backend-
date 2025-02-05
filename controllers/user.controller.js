@@ -273,4 +273,128 @@ export const verifyOtp = async (req, res) => {
       .json({ message: "Server error: " + error.message, success: false });
   }
 };
+export const getAllDirectUsers = async (req, res) => {
+  try {
+    const userId = req.id;
 
+    const user = await User.findById(userId)
+      .populate("left right")
+      .populate("left right");
+    console.log(user);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Agent not found", success: false });
+    }
+    const directUsers = user.left.concat(user.right);
+    return res.status(200).json({
+      message: "Direct users fetched successfully",
+      success: true,
+      directUsers,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message, success: false });
+  }
+};
+export const getTree = async (req, res) => {
+  try {
+    const userId = req.id;
+
+    // Fetch the root user
+    const rootUser = await User.findById(userId);
+    if (!rootUser) {
+      return res
+        .status(404)
+        .json({ message: "Agent not found", success: false });
+    }
+
+    // Helper function to recursively build the tree and fetch left/right nodes manually
+    const buildTree = async (user) => {
+      if (!user) return null;
+
+      // Fetch the left and right children (manually populate)
+      const leftChildren = user.left
+        ? await Promise.all(user.left.map((childId) => fetchChild(childId)))
+        : [];
+      const rightChildren = user.right
+        ? await Promise.all(user.right.map((childId) => fetchChild(childId)))
+        : [];
+
+      return {
+        id: user._id,
+        name: user.name || "Unknown",
+        left: leftChildren,
+        right: rightChildren,
+      };
+    };
+
+    // Helper function to fetch a child user and recursively populate its left and right
+    const fetchChild = async (childId) => {
+      const childUser = await User.findById(childId);
+      if (!childUser) return null;
+
+      const leftChildren = childUser.left
+        ? await Promise.all(
+            childUser.left.map((childId) => fetchChild(childId))
+          )
+        : [];
+      const rightChildren = childUser.right
+        ? await Promise.all(
+            childUser.right.map((childId) => fetchChild(childId))
+          )
+        : [];
+
+      return {
+        id: childUser._id,
+        name: childUser.name || "Unknown",
+        left: leftChildren,
+        right: rightChildren,
+      };
+    };
+
+    // Build the full tree starting from the root user
+    const tree = await buildTree(rootUser);
+
+    return res.status(200).json({
+      message: "Tree fetched successfully",
+      success: true,
+      tree,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message, success: false });
+  }
+};
+export const getUserPairs = async (req, res) => {
+  try {
+    const userId = req.id;
+
+    // Fetch user and populate only immediate left and right children
+    const user = await User.findById(userId).populate("left right")
+    if (!user) {
+      return res.status(404).json({ message: "User not found", success: false });
+    }
+
+    const leftUsers = user.left || [];
+    const rightUsers = user.right || [];
+    const teams = [];
+
+    const maxLength = Math.min(leftUsers.length, rightUsers.length);
+
+    // Creating teams by pairing one left and one right user
+    for (let i = 0; i < maxLength; i++) {
+      teams.push({
+        left: leftUsers[i],
+        right: rightUsers[i],
+      });
+    }
+
+    return res.status(200).json({
+      message: `${teams.length} teams created successfully`,
+      success: true,
+      teams,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message, success: false });
+  }
+};
