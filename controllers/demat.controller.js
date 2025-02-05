@@ -4,6 +4,7 @@ import { User } from "../models/user.js";
 
 export const demat = async (req, res) => {
   try {
+    const userId = req.id;
     const { id, password } = req.body;
 
     if (!password || !id) {
@@ -13,7 +14,6 @@ export const demat = async (req, res) => {
       });
     }
 
-    const userId = req.id;
     const user = await User.findById(userId);
 
     if (!user) {
@@ -50,10 +50,16 @@ export const demat = async (req, res) => {
   }
 };
 
+
+
 export const getDematAccounts = async (req, res) => {
   try {
-    const dematAccounts = await Demat.find();
-    res.json({ dematAccounts, success: true });
+    const dematAccounts = await Demat.find().populate("userId");
+    return res.status(200).json({
+      message: "All demat accounts fetched successfully",
+      dematAccounts,
+      success: true,
+    })
   } catch (error) {
     return res.status(500).json({
       message: error.message,

@@ -54,7 +54,7 @@ export const getAllWithdraw = async (req, res) => {
 
 export const getAllDematAccounts = async (req, res) => {
   try {
-    const dematAccounts = await Demat.find({});
+    const dematAccounts = await Demat.find().populate("userId")
     return res.status(200).json({ dematAccounts, success: true });
   } catch (error) {
     return res.status(500).json({ message: error.message, success: false });

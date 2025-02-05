@@ -69,6 +69,12 @@ const UserSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    partners:[
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     status: {
       type: Boolean,
       default: false,
@@ -81,6 +87,11 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    lastLevelIncomeCalculation: {
+      type: Date,
+      default: null,
+    },
+
   },
   {
     timestamps: true,

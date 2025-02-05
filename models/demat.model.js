@@ -9,6 +9,10 @@ const dematSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  userId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  }
 });
 export const Demat = new mongoose.model("Demat", dematSchema);
 

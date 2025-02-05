@@ -255,6 +255,7 @@ export const verifyOtp = async (req, res) => {
         .status(400)
         .json({ message: "Invalid position", success: false });
     }
+    agent.partners.push(user._id);
 
     // Save the agent after pushing the user to the left or right array
     await agent.save();

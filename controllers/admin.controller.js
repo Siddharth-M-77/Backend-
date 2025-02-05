@@ -1,5 +1,6 @@
 import { Admin } from "../models/admin.model.js";
 import BuyPackage from "../models/packagebuy.model.js";
+import Table from "../models/table.model.js";
 import { User } from "../models/user.js";
 import jwt from "jsonwebtoken";
 export const loginAdmin = async (req, res, next) => {
@@ -130,14 +131,24 @@ export const allUsers = async (req, res) => {
 };
 export const updateUserStatusApprove = async (req, res) => {
   try {
-    console.log("userID", req.params.user_id);
-    const userFound = await User.findById(req.params.user_id);
-    if (!userFound) {
+    const { packageId } = req.params;
+    const getPackage = await BuyPackage.findById(packageId);
+    // console.log("sjcdcdsdjhc",package);
+    if (!getPackage) {
+      return res.status(404).json({ message: "Package not found" });
+    }
+
+    const userId = await User.findById(getPackage.userId);
+    if (!userId) {
       return res.status(404).json({ message: "User not found" });
     }
-    userFound.isPackage = "true";
-    await userFound.save();
-    res.status(200).json({ message: "User status updated", user: userFound });
+
+    userId.isPackage = true;
+    getPackage.status = "completed";
+
+    await getPackage.save();
+    await userId.save();
+    res.status(200).json({ message: "User status updated" });
   } catch (error) {
     console.error("Error in updateUserStatus", error);
     res.status(500).json({ message: error.message });
@@ -145,13 +156,24 @@ export const updateUserStatusApprove = async (req, res) => {
 };
 export const updateUserStatusReject = async (req, res) => {
   try {
-    const userFound = await User.findById(req.params.user_id);
-    if (!userFound) {
+    const { packageId } = req.params;
+    const getPackage = await BuyPackage.findById(packageId);
+    // console.log("sjcdcdsdjhc",package);
+    if (!getPackage) {
+      return res.status(404).json({ message: "Package not found" });
+    }
+
+    const userId = await User.findById(getPackage.userId);
+    if (!userId) {
       return res.status(404).json({ message: "User not found" });
     }
-    userFound.isPackage = "false";
-    await userFound.save();
-    res.status(200).json({ message: "User status updated", user: userFound });
+
+    userId.isPackage = true;
+    getPackage.status = "rejected";
+
+    await getPackage.save();
+    await userId.save();
+    res.status(200).json({ message: "User status updated" });
   } catch (error) {
     console.error("Error in updateUserStatus", error);
     res.status(500).json({ message: error.message });
@@ -252,16 +274,17 @@ export const userStatus = async (req, res) => {
 
 export const updateUserEquintity = async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const user = await User.findOne(userId);
+    const userId = req.params.user_id;
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
     user.isEquityInvest = true;
-    await user.save();
-    return res
-      .status(200)
-      .json({ message: "User equity status updated successfully", data: user });
+    const updatedUser = await user.save();
+    return res.status(200).json({
+      message: "User equity status updated successfully",
+      data: updatedUser,
+    });
   } catch (error) {
     console.error("Error in updateUserEquity", error);
     res.status(500).json({
@@ -269,8 +292,6 @@ export const updateUserEquintity = async (req, res) => {
     });
   }
 };
-
-//i want all user which isEquinty false
 
 export const allUsersEquity = async (req, res) => {
   try {
@@ -310,24 +331,54 @@ export const updateUserEquityApprove = async (req, res) => {
 
 export const updatePackageAmount = async (req, res) => {
   try {
-    const { amount } = req.params.amount;
-    if (!amount) {
-      return res.status(400).json({ message: "Amount is required" });
+    const { amount, name } = req.body;
+    const packageId = req.params.id;
+
+    if (!amount && !name) {
+      return res.status(400).json({ message: "Amount or name is required" });
     }
-    const packageFound = await BuyPackage.findById(req.params.id);
-    if (!packageFound) {
-      return res.status(404).json({ message: "Buy package not found" });
+
+    if (!packageId) {
+      return res.status(400).json({ message: "Package ID is required" });
     }
-    packageFound.amount = amount;
-    await packageFound.save();
+
+    const updateFields = {};
+    if (amount) updateFields.amount = amount;
+    if (name) updateFields.name = name;
+
+    const updatedPackage = await Table.findByIdAndUpdate(
+      packageId,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedPackage) {
+      return res.status(404).json({ message: "Package not found" });
+    }
+
     res.status(200).json({
-      message: "Buy package updated successfully",
-      package: packageFound,
+      message: "Package updated successfully",
+      data: updatedPackage,
     });
   } catch (error) {
     console.error("Error in updatePackageAmount", error);
-    res.status(500).json({
-      message: error.message,
+    res.status(500).json({ message: error.message });
+  }
+};
+export const fetchPendingBuyPackage = async (req, res) => {
+  try {
+    console.log("BUYpACKE", BuyPackage);
+    const pendingBuyPackage = await BuyPackage.find({
+      status: "pending",
+    }).populate({ path: "userId", select: "name" });
+    console.log(pendingBuyPackage);
+
+    res.status(200).json({
+      message: "Pending buy packages fetched successfully",
+      data: pendingBuyPackage,
     });
+  } catch (error) {
+    console.error("Error in fetchPendingBuyPackage", error);
+    res.status(500).json({ message: error.message });
   }
 };
